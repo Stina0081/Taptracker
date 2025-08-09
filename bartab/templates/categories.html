@@ -17,14 +17,10 @@
 {% if tabs %}
 <ul class="list-group">
     {% for name, tab in tabs.items() %}
-    {% set total = 0 %}
-    {% for item in tab %}
-        {% set total = total + item["price"]|float %}
-    {% endfor %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
         <div>
             <a href="{{ url_for('view_tab', name=name) }}" class="fw-bold">{{ name }}</a>
-            <span class="text-muted">- €{{ '%.2f'|format(total) }}</span>
+            <span class="text-muted">- €{{ '%.2f'|format(tabs_totals[name]) }}</span>
         </div>
         <div>
             <span class="badge bg-secondary me-2">{{ tab|length }} drankjes</span>
@@ -36,4 +32,9 @@
 {% else %}
 <p class="text-muted">Geen open tabs.</p>
 {% endif %}
+
+<hr class="my-4">
+
+<a href="{{ url_for('leaderboard') }}" class="btn btn-success">Bekijk Leaderboard 🍻</a>
+
 {% endblock %}

@@ -6,19 +6,18 @@ app.secret_key = "supersecretkey"
 
 DATA_FILE = "data.json"
 
-# ---------- Helpers ----------
 def load_data():
     if not os.path.exists(DATA_FILE):
         return {"menu": {}, "tabs": {}}
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Converter: als menu een lijst is, maak er dict van
+
     if isinstance(data.get("menu"), list):
         data["menu"] = {"Overig": data["menu"]}
         save_data(data)
 
-    # Fix: zorg dat prijs in tabs als float is
+
     for tab_list in data.get("tabs", {}).values():
         for item in tab_list:
             item["price"] = float(item.get("price", 0))
@@ -29,14 +28,23 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
-# ---------- Routes ----------
+
 @app.route("/")
 def categories():
     data = load_data()
+    tabs = data["tabs"]
+
+
+    tabs_totals = {}
+    for name, tab in tabs.items():
+        total = sum(float(item.get("price", 0)) for item in tab)
+        tabs_totals[name] = total
+
     return render_template(
         "categories.html",
         categories=data["menu"].keys(),
-        tabs=data["tabs"]
+        tabs=tabs,
+        tabs_totals=tabs_totals
     )
 
 @app.route("/category/<cat>")
@@ -71,7 +79,7 @@ def add_to_tab():
     item_name = request.form["item_name"]
     item_price = float(request.form["item_price"])
 
-    # Lees aantal drankjes uit formulier, default 1
+
     amount = request.form.get("amount", "1")
     try:
         amount = int(amount)
@@ -83,7 +91,7 @@ def add_to_tab():
     if name not in data["tabs"]:
         data["tabs"][name] = []
 
-    # Voeg het drankje 'amount' keer toe
+
     for _ in range(amount):
         data["tabs"][name].append({"name": item_name, "price": item_price})
 
@@ -111,12 +119,12 @@ def remove_from_tab(name, index):
 def close_tab(name):
     data = load_data()
     if name in data["tabs"]:
-        data["tabs"][name] = []  # klant blijft bestaan
+        data["tabs"][name] = []  
     save_data(data)
     flash(f"Rekening van {name} is afgesloten (klant blijft in systeem)", "info")
     return redirect(url_for("categories"))
 
-# ---------- Leaderboard ----------
+
 @app.route("/leaderboard")
 def leaderboard():
     data = load_data()
@@ -124,7 +132,6 @@ def leaderboard():
     sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)
     return render_template("leaderboard.html", leaderboard=sorted_counts)
 
-# ---------- Settings Routes ----------
 @app.route("/settings")
 def settings():
     data = load_data()
