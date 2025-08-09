@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-import json, os
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+import json, os, io
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -12,11 +14,9 @@ def load_data():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-
     if isinstance(data.get("menu"), list):
         data["menu"] = {"Overig": data["menu"]}
         save_data(data)
-
 
     for tab_list in data.get("tabs", {}).values():
         for item in tab_list:
@@ -28,12 +28,10 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
-
 @app.route("/")
 def categories():
     data = load_data()
     tabs = data["tabs"]
-
 
     tabs_totals = {}
     for name, tab in tabs.items():
@@ -79,7 +77,6 @@ def add_to_tab():
     item_name = request.form["item_name"]
     item_price = float(request.form["item_price"])
 
-
     amount = request.form.get("amount", "1")
     try:
         amount = int(amount)
@@ -90,7 +87,6 @@ def add_to_tab():
 
     if name not in data["tabs"]:
         data["tabs"][name] = []
-
 
     for _ in range(amount):
         data["tabs"][name].append({"name": item_name, "price": item_price})
@@ -119,11 +115,10 @@ def remove_from_tab(name, index):
 def close_tab(name):
     data = load_data()
     if name in data["tabs"]:
-        data["tabs"][name] = []  
+        data["tabs"][name] = []
     save_data(data)
     flash(f"Rekening van {name} is afgesloten (klant blijft in systeem)", "info")
     return redirect(url_for("categories"))
-
 
 @app.route("/leaderboard")
 def leaderboard():
@@ -198,6 +193,57 @@ def settings_delete_customer():
     else:
         flash("Klant niet gevonden.", "danger")
     return redirect(url_for("settings"))
+
+
+# Nieuwe route om PDF overzicht te downloaden
+@app.route("/download_overzicht")
+def download_overzicht():
+    data = load_data()
+    tabs = data.get("tabs", {})
+
+    overzicht = []
+    totaal_avond = 0
+    for name, tab in tabs.items():
+        totaal = sum(item.get("price", 0) for item in tab)
+        overzicht.append((name, totaal))
+        totaal_avond += totaal
+
+    overzicht.sort(key=lambda x: x[1], reverse=True)
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 50, "Overzicht drankjes per persoon")
+
+    c.setFont("Helvetica", 12)
+    y = height - 80
+    c.drawString(50, y, "Naam")
+    c.drawString(300, y, "Bedrag (€)")
+    y -= 20
+    c.line(50, y, 550, y)
+    y -= 20
+
+    for naam, bedrag in overzicht:
+        c.drawString(50, y, naam)
+        c.drawRightString(400, y, f"€{bedrag:.2f}")
+        y -= 20
+        if y < 50:
+            c.showPage()
+            y = height - 50
+
+    c.line(50, y, 550, y)
+    y -= 30
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y, "Totaal opbrengst avond:")
+    c.drawRightString(400, y, f"€{totaal_avond:.2f}")
+
+    c.save()
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True, download_name="overzicht_drankjes.pdf", mimetype="application/pdf")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
