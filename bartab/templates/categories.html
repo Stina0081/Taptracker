@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Kies een categorie</h2>
+<div class="row">
+    {% for cat in categories %}
+    <div class="col-6 col-md-3 mb-3">
+        <a href="{{ url_for('drinks', cat=cat) }}" class="btn btn-primary w-100 p-3 fs-5">
+            {{ cat }}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<hr class="my-4">
+
+<h3>Open Tabs</h3>
+{% if tabs %}
+<ul class="list-group">
+    {% for name, tab in tabs.items() %}
+    {% set total = 0 %}
+    {% for item in tab %}
+        {% set total = total + item["price"]|float %}
+    {% endfor %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <a href="{{ url_for('view_tab', name=name) }}" class="fw-bold">{{ name }}</a>
+            <span class="text-muted">- €{{ '%.2f'|format(total) }}</span>
+        </div>
+        <div>
+            <span class="badge bg-secondary me-2">{{ tab|length }} drankjes</span>
+            <!-- Sluit tab knop verwijderd -->
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted">Geen open tabs.</p>
+{% endif %}
+{% endblock %}

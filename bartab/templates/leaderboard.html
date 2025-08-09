@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Leaderboard: meeste drankjes per goon</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Naam</th>
+            <th>Aantal drankjes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, count in leaderboard %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('categories') }}" class="btn btn-secondary mt-3">← Terug</a>
+{% endblock %}

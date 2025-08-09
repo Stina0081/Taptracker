@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Voeg toe: {{ drink_name }} ({{ category }})</h2>
+
+<div class="mb-3">
+  <h5>Kies klant:</h5>
+  <div id="customerButtons" class="d-flex flex-wrap gap-2 mb-3">
+    {% for cname in customers %}
+    <div class="customer-block position-relative">
+      <button type="button" class="btn btn-outline-primary customer-btn" data-name="{{ cname }}">{{ cname }}</button>
+      <!-- Inline formulier, standaard verborgen -->
+      <form method="post" action="{{ url_for('add_to_tab') }}" class="inline-add-form" style="display:none; margin-top:5px;">
+        <input type="hidden" name="item_name" value="{{ drink_name }}">
+        <input type="hidden" name="item_price" value="{{ price }}">
+        <input type="hidden" name="existing_name" value="{{ cname }}">
+        <input type="hidden" name="new_name" value="">
+        <input type="number" name="amount" value="1" min="1" max="99" class="form-control form-control-sm d-inline-block" style="width: 60px;" required>
+        <button type="submit" class="btn btn-sm btn-success ms-1">Toevoegen</button>
+        <button type="button" class="btn btn-sm btn-secondary ms-1 cancel-btn">✕</button>
+      </form>
+    </div>
+    {% endfor %}
+    <div>
+      <button type="button" class="btn btn-outline-success" id="newCustomerBtn">+ Nieuwe klant</button>
+    </div>
+  </div>
+</div>
+
+<!-- Formulier voor nieuwe klant -->
+<form method="post" action="{{ url_for('add_to_tab') }}" id="newCustomerForm" style="display:none; max-width: 300px;">
+    <input type="hidden" name="item_name" value="{{ drink_name }}">
+    <input type="hidden" name="item_price" value="{{ price }}">
+    <div class="mb-2">
+      <input type="text" name="new_name" id="newCustomerName" placeholder="Naam nieuwe klant" class="form-control" required autocomplete="off">
+    </div>
+    <div class="mb-2">
+      <label for="newCustomerAmount" class="form-label">Aantal drankjes:</label>
+      <input type="number" name="amount" id="newCustomerAmount" class="form-control" value="1" min="1" max="99" required>
+    </div>
+    <button type="submit" class="btn btn-success w-100">Toevoegen</button>
+    <button type="button" class="btn btn-secondary w-100 mt-2" id="cancelNewCustomer">Annuleren</button>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const customerBlocks = document.querySelectorAll('.customer-block');
+  const newCustomerBtn = document.getElementById('newCustomerBtn');
+  const newCustomerForm = document.getElementById('newCustomerForm');
+  const cancelNewCustomer = document.getElementById('cancelNewCustomer');
+
+  // Functie om alle inline formulieren te verbergen
+  function hideAllInlineForms() {
+    customerBlocks.forEach(block => {
+      const form = block.querySelector('.inline-add-form');
+      form.style.display = 'none';
+    });
+  }
+
+  // Klik op klantknop toont inline formulier, andere verbergen
+  customerBlocks.forEach(block => {
+    const btn = block.querySelector('.customer-btn');
+    const form = block.querySelector('.inline-add-form');
+    const cancelBtn = form.querySelector('.cancel-btn');
+
+    btn.addEventListener('click', () => {
+      // Als formulier al zichtbaar is: verberg het
+      if (form.style.display === 'block') {
+        form.style.display = 'none';
+      } else {
+        hideAllInlineForms();
+        form.style.display = 'block';
+        // Focus op input
+        form.querySelector('input[type=number]').focus();
+      }
+      // Verberg nieuwe klant formulier
+      newCustomerForm.style.display = 'none';
+      newCustomerBtn.style.display = 'inline-block';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      form.style.display = 'none';
+    });
+  });
+
+  // Nieuwe klant knop toont het formulier
+  newCustomerBtn.addEventListener('click', () => {
+    hideAllInlineForms();
+    newCustomerForm.style.display = 'block';
+    newCustomerBtn.style.display = 'none';
+    document.getElementById('newCustomerName').focus();
+  });
+
+  // Cancel knop nieuwe klant formulier
+  cancelNewCustomer.addEventListener('click', () => {
+    newCustomerForm.style.display = 'none';
+    newCustomerBtn.style.display = 'inline-block';
+    document.getElementById('newCustomerName').value = '';
+    document.getElementById('newCustomerAmount').value = 1;
+  });
+});
+</script>
+
+<a href="{{ url_for('drinks', cat=category) }}" class="btn btn-secondary mt-3">← Terug</a>
+
+{% endblock %}
