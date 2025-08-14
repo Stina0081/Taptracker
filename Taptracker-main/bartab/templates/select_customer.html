@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Voeg toe: {{ drink_name }} ({{ category }})</h2>
+
+<form method="post" action="{{ url_for('add_to_tab') }}">
+  <input type="hidden" name="item_name" value="{{ drink_name }}">
+  <input type="hidden" name="item_price" value="{{ price }}">
+  <div class="mb-3">
+    <h5>Kies klant(en):</h5>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% for cname in customers %}
+      <label class="btn btn-outline-primary">
+        <input type="checkbox" name="selected_customers" value="{{ cname }}" autocomplete="off" class="customer-checkbox"> {{ cname }}
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="mb-3" style="max-width: 200px;">
+    <label for="amount" class="form-label">Aantal drankjes:</label>
+    <input type="number" name="amount" id="amount" class="form-control" value="1" min="1" max="99" required>
+  </div>
+  <button type="submit" class="btn btn-success">Toevoegen</button>
+  <a href="{{ url_for('drinks', cat=category) }}" class="btn btn-secondary ms-2">Annuleren</a>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Highlight geselecteerde klanten
+  document.querySelectorAll('.customer-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+      if (this.checked) {
+        this.parentElement.classList.add('selected-customer');
+      } else {
+        this.parentElement.classList.remove('selected-customer');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
