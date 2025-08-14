@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Drankjes in {{ category }}</h2>
+<div class="row">
+    {% for drink in drinks %}
+    <div class="col-6 col-md-3 mb-3">
+        <a href="{{ url_for('select_customer', category=category, drink_name=drink.name, price=drink.price) }}"
+           class="btn btn-outline-secondary w-100 p-3">
+            {{ drink.name }} <br> €{{ "%.2f"|format(drink.price) }}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+<a href="{{ url_for('categories') }}" class="btn btn-secondary mt-3">← Terug</a>
+{% endblock %}
