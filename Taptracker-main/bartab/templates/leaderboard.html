@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Leaderboard: meeste drankjes per goon</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Naam</th>
+            <th>Aantal drankjes</th>
+            <th>Bedrag (€)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, count, total in leaderboard %}
+        <tr>
+            <td>{{ loop.index }}{{ "e" if loop.index == 1 else ("e" if loop.index == 2 else ("e" if loop.index == 3 else "")) }}</td>
+            <td>{{ name }}</td>
+            <td>{{ count }}</td>
+            <td>€{{ "%.2f"|format(total) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('categories') }}" class="btn btn-secondary mt-3">← Terug</a>
+{% endblock %}
