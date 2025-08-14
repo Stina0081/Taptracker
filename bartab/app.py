@@ -6,7 +6,7 @@ from reportlab.pdfgen import canvas
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-DATA_FILE = "data.json"
+DATA_FILE = os.path.join(os.path.dirname(__file__), "data.json")
 
 def load_data():
     if not os.path.exists(DATA_FILE):
@@ -66,11 +66,12 @@ def select_customer(category, drink_name, price):
 def add_to_tab():
     data = load_data()
 
-    existing_name = request.form.get("existing_name", "")
+    # Meerdere klanten mogelijk
+    selected_customers = request.form.getlist("selected_customers")
     new_name = request.form.get("new_name", "").strip()
-    name = existing_name if existing_name else new_name
+    name_list = selected_customers if selected_customers else ([new_name] if new_name else [])
 
-    if not name:
+    if not name_list:
         flash("Geen klantnaam opgegeven!", "danger")
         return redirect(url_for("categories"))
 
@@ -85,14 +86,14 @@ def add_to_tab():
     except ValueError:
         amount = 1
 
-    if name not in data["tabs"]:
-        data["tabs"][name] = []
-
-    for _ in range(amount):
-        data["tabs"][name].append({"name": item_name, "price": item_price})
+    for name in name_list:
+        if name not in data["tabs"]:
+            data["tabs"][name] = []
+        for _ in range(amount):
+            data["tabs"][name].append({"name": item_name, "price": item_price})
 
     save_data(data)
-    flash(f"{amount}x {item_name} toegevoegd aan {name}", "success")
+    flash(f"{amount}x {item_name} toegevoegd aan {', '.join(name_list)}", "success")
     return redirect(url_for("categories"))
 
 @app.route("/tab/<name>")
@@ -123,9 +124,14 @@ def close_tab(name):
 @app.route("/leaderboard")
 def leaderboard():
     data = load_data()
-    counts = {name: len(tab) for name, tab in data.get("tabs", {}).items()}
-    sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)
-    return render_template("leaderboard.html", leaderboard=sorted_counts)
+    leaderboard_data = []
+    for name, tab in data.get("tabs", {}).items():
+        count = len(tab)
+        total = sum(item.get("price", 0) for item in tab)
+        leaderboard_data.append((name, count, total))
+    # Sorteren op aantal drankjes, dan op bedrag
+    leaderboard_data.sort(key=lambda x: (-x[1], -x[2]))
+    return render_template("leaderboard.html", leaderboard=leaderboard_data)
 
 @app.route("/settings")
 def settings():
@@ -243,6 +249,13 @@ def download_overzicht():
     buffer.seek(0)
 
     return send_file(buffer, as_attachment=True, download_name="overzicht_drankjes.pdf", mimetype="application/pdf")
+
+
+@app.route("/choose_drink/<name>/<category>")
+def choose_drink_for_customer(name, category):
+    data = load_data()
+    drinks = data["menu"].get(category, [])
+    return render_template("choose_drink.html", name=name, category=category, drinks=drinks)
 
 
 if __name__ == "__main__":
